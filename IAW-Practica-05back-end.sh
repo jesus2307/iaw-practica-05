@@ -3,6 +3,7 @@
 #Declaración de todas las variables de utilidad
 DB_ROOT_PASSWD=root
 DB_USU_PASSWD=usuario
+IP_PRIVADA=172.31.59.33
 #Activamos la depuración del script
 set -x
 #Actualizamos la lista de paquetes Ubuntu
