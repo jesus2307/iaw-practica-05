@@ -2,18 +2,14 @@
 
 # -------------------------------------------- Balanceador --------------------------------------------
 # Configuracion del scritp
-# IPs Servidores Apache
-IPHTTPSERVER1=172.31.95.155
-IPHTTPSERVER2=172.31.26.108
 set -x
-cp -r /home/ubuntu/IAW-Practica05/* /home/ubuntu/
-# Actualizamos la lista de paquetes
+# Actualizamos los repositorios
 apt update
-apt upgrade -y
-# Instalamos el servidor web Apache 
-apt install apache2 -y
 
-# Activamos módulos necesarios en Apache
+# Instalamos apache
+apt install apache2 -y 
+
+# Habilitamos los módulos de apache para configurarlo como proxy
 a2enmod proxy
 a2enmod proxy_http
 a2enmod proxy_ajp
@@ -25,12 +21,8 @@ a2enmod proxy_connect
 a2enmod proxy_html
 a2enmod lbmethod_byrequests
 
-# Movemos el archivo de configuración ya modificado previamente
+# Aplicamos nuestro archivo default.conf con las funciones de proxy inverso activadas.
 cp 000-default.conf /etc/apache2/sites-enabled/
 
-# Reiniciamos el servicio de Apache
-/etc/init.d/apache2 restart
-
-# -------------------------------------------------------------------------------------------------------
-
-
+# Reiniciamos apache para que se apliquen los cambios
+sudo systemctl restart apache2
