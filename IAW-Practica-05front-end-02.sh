@@ -6,7 +6,9 @@ HTTPASSWD_USER=usuario
 HTTPASSWD_PASSWD=usuario
 IP_PRIVADA_MYSQL=172.31.84.134
 
-#Activamos la depuración del script
+### Contraseña aleatoria para el parámetro blowfish_secret de nuestro config.inc.php
+BLOWFISH=`tr -dc A-Za-z0-9 < /dev/urandom | head -c 64`
+# Habilitamos el modo de shell para mostrar los comandos que se ejecutan
 set -x
 #Actualizamos la lista de paquetes Ubuntu
 apt update -y
@@ -52,8 +54,8 @@ echo "deb http://deb.goaccess.io/ $(lsb_release -cs) main" | sudo tee -a /etc/ap
 #Descargamos las claves y el certificado 
 wget -O - https://deb.goaccess.io/gnugpg.key | sudo apt-key add -
 #Instalamos GoAccess
-apt update -y
-apt install goaccess -y
+apt-get update 
+apt-get install goaccess -y
 
 #----------------------------------------
 #DIRECTORIO PARA CONSULTA DE ESTADÍSTICAS|
@@ -65,7 +67,7 @@ nohup goaccess /var/log/apache2/access.log -o /var/www/html/stats/index.html --l
 #Creamos el archivo de contraseñas para el usuario que accederá al directorio stats y lo guardamos en un directorio seguro. 
 #En nuestro caso el archivo se va a llamar .htpasswd y se guardará en el directorio /home/usuario. 
 #El usuario que vamos a crear tiene como nombre de usuario: usuario.
-htpasswd -b -c $HTTPASSWD_DIR/.htpasswd $HTTPASSWD_USER $HTTPASSWD_PASSWD
+htpasswd -c -b $HTTPASSWD_DIR/.htpasswd $HTTPASSWD_USER $HTTPASSWD_PASSWD
 #Cambiamos la cadena "REPLACE_THIS_PATH" por la ruta de la carpeta del usuario
 sed -i 's#REPLACE_THIS_PATH#$HTTPASSWD_DIR#g' $HTTPASSWD_DIR/000-default.conf
 #Copiamos el archivo de configuracion de Apache desde el directorio de usuario
@@ -91,25 +93,27 @@ mv phpMyAdmin-5.0.4-all-languages/ /var/www/html/phpmyadmin
 #Cambiamos al directorio de phpmyadmin para renombrar el archivo de configuración y configurarlo
 cd /var/www/html/phpmyadmin
 mv config.sample.inc.php config.inc.php
-sed -i "s/localhost/$IP_PRIVADA_MYSQL/" /var/www/html/phpmyadmin/config.inc.php
+sed -i "s/localhost/$IP_PRIVADA/" /var/www/html/phpmyadmin/config.inc.php
+sed -i "s/'blowfish_secret'] = '';/'blowfish_secret'] = '$BLOWFISH';/" /var/www/html/phpmyadmin/config.inc.php
+
 
 #--------------------------
 #INSTALACIÓN APLICACIÓN WEB| 
 #--------------------------
-#Vamos al directorio en el que se instalará la aplicación
-cd /var/www/html
-#Ejecutamos este comendo por si la carpeta de la aplicación existe, que sea eliminada
-rm -rf iaw-practica-lamp
-#Descargamos el repositorio
-git clone https://github.com/josejuansanchez/iaw-practica-lamp.git
-#Movemos el contenido del repositorio a la carpeta de apache
-mv /var/www/html/iaw-practica-lamp/src/* /var/www/html/
-#Quitamos el index.html 
-rm -rf /var/www/html/index.html
-#Quitamos los archivos que no necesitamos
+# Clonamos el repositorio de la aplicación
+cd /var/www/html 
+rm -rf iaw-practica-lamp 
+git clone https://github.com/josejuansanchez/iaw-practica-lamp
+
+# Movemos el contenido del repositorio al home de html
+mv /var/www/html/iaw-practica-lamp/src/*  /var/www/html/
+
+# Configuramos el archivo php de la aplicacion. En https://linuxhint.com/bash_sed_examples/ podemos leer sobre las especificaciones del comando sed y el operador -i, que reemplazarán la línea. Ojo a las comillas, tienen que ser dobles.
+sed -i "s/localhost/$IP_PRIVADA/" /var/www/html/config.php
+
+# Eliminamos el archivo Index.html de apache
 rm -rf /var/www/html/index.html
 rm -rf /var/www/html/iaw-practica-lamp/
-#Cambiamos los permisos del directorio apache
+
+# Cambiamos permisos 
 chown www-data:www-data * -R
-#Configuramos el archivo config.php
-sed -i "s/localhost/$IP_PRIVADA_MYSQL/" /var/www/html/config.php
